@@ -1,0 +1,13 @@
+﻿
+> eyewear-server@1.0.0 dev
+> nodemon index.js
+
+[33m[nodemon] 3.1.11[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Server running on port 5001
+MongoDB Connected: ac-toe3at0-shard-00-00.9hu7y5x.mongodb.net
+[0mGET /api/products/invalid_id_format [31m500[0m 12.868 ms - 26[0m
+[0mGET /api/products/6994842a8007766ad2f9ec64 [32m200[0m 302.460 ms - 581[0m
