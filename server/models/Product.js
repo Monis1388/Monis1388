@@ -21,7 +21,7 @@ const productSchema = new mongoose.Schema({
     image: { type: String, required: true }, // Main image
     images: [{ type: String }], // Gallery
     brand: { type: String, required: true },
-    category: { type: String, required: true }, // Eyeglasses, Sunglasses, Contact Lenses, Accessories
+    category: { type: String, required: true }, // Eyeglasses, Sunglasses, Accessories
     description: { type: String, required: true },
     reviews: [reviewSchema],
     rating: { type: Number, required: true, default: 0 },

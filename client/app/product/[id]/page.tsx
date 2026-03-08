@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import api from '../../../utils/api';
+import api, { BACKEND_URL } from '../../../utils/api';
 import { useAuth } from '../../../context/AuthContext';
-import { Star, ShieldCheck, Truck, RotateCcw, ShoppingCart, ImageOff, Glasses } from 'lucide-react';
+import { Star, ShieldCheck, Truck, RotateCcw, ShoppingCart, ImageOff, Glasses, Heart } from 'lucide-react';
 
 export default function ProductDetail() {
     const { id } = useParams();
@@ -14,6 +14,8 @@ export default function ProductDetail() {
     const [qty, setQty] = useState(1);
     const [mainImage, setMainImage] = useState('');
     const [imgError, setImgError] = useState(false);
+    const [isWishlisted, setIsWishlisted] = useState(false);
+    const [wishlistLoading, setWishlistLoading] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -28,11 +30,22 @@ export default function ProductDetail() {
             }
         }
         if (id) fetchProduct();
-    }, [id]);
+
+        const checkWishlistStatus = async () => {
+            if (!user) return;
+            try {
+                const { data } = await api.get('users/wishlist');
+                setIsWishlisted(data.some((item: any) => item._id === id));
+            } catch (error) {
+                console.error('Error checking wishlist status', error);
+            }
+        }
+        checkWishlistStatus();
+    }, [id, user]);
 
     const formatImageUrl = (img: string) => {
         if (!img) return 'https://images.unsplash.com/photo-1544717297-fa15bdfca03c?q=80&w=800';
-        return img.startsWith('/uploads/') ? `http://localhost:5001${img}` : img;
+        return img.startsWith('/uploads/') ? `${BACKEND_URL}${img}` : img;
     };
 
     const addToCartHandler = async () => {
@@ -52,6 +65,27 @@ export default function ProductDetail() {
             router.push('/cart');
         } catch (error) {
             alert('Failed to add to cart');
+        }
+    }
+
+    const toggleWishlistHandler = async () => {
+        if (!user) {
+            router.push(`/login?redirect=/product/${id}`);
+            return;
+        }
+        setWishlistLoading(true);
+        try {
+            if (isWishlisted) {
+                await api.delete(`users/wishlist/${id}`);
+                setIsWishlisted(false);
+            } else {
+                await api.post('users/wishlist', { productId: id });
+                setIsWishlisted(true);
+            }
+        } catch (error) {
+            alert('Failed to update wishlist');
+        } finally {
+            setWishlistLoading(false);
         }
     }
 
@@ -203,8 +237,13 @@ export default function ProductDetail() {
                                     {product.countInStock === 0 ? 'Notify Me' : 'Add to Shopping Bag'}
                                 </button>
                             )}
-                            <button className="flex-1 border-2 border-gray-900 py-5 rounded-full font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-all active:scale-95">
-                                Try-On 🕶️
+
+                            <button
+                                onClick={toggleWishlistHandler}
+                                disabled={wishlistLoading}
+                                className={`w-16 h-16 rounded-full flex items-center justify-center border-2 transition-all active:scale-95 ${isWishlisted ? 'border-red-500 bg-red-50 text-red-500' : 'border-gray-200 text-gray-400 hover:border-gray-900 hover:text-gray-900'}`}
+                            >
+                                <Heart className={`w-6 h-6 ${isWishlisted ? 'fill-red-500' : ''}`} />
                             </button>
                         </div>
                     </div>
@@ -217,7 +256,7 @@ export default function ProductDetail() {
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <RotateCcw className="w-5 h-5 text-gray-900" />
-                            <span>14 Day Returns</span>
+                            <span>7 Day Returns</span>
                         </div>
                         <div className="flex flex-col items-center gap-2">
                             <Truck className="w-5 h-5 text-gray-900" />

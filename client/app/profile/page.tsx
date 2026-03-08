@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { Package } from 'lucide-react';
 
 export default function Profile() {
     const { user, logout } = useAuth();
@@ -89,6 +90,7 @@ export default function Profile() {
                     <button onClick={() => setActiveTab('orders')} className={`w-full text-left px-4 py-2 rounded ${activeTab === 'orders' ? 'bg-primary text-white' : 'hover:bg-muted'}`}>My Orders</button>
                     <button onClick={() => setActiveTab('profile')} className={`w-full text-left px-4 py-2 rounded ${activeTab === 'profile' ? 'bg-primary text-white' : 'hover:bg-muted'}`}>Profile Settings</button>
                     <button onClick={() => setActiveTab('prescription')} className={`w-full text-left px-4 py-2 rounded ${activeTab === 'prescription' ? 'bg-primary text-white' : 'hover:bg-muted'}`}>My Prescriptions</button>
+                    <button onClick={() => { logout(); router.push('/login'); }} className="w-full text-left px-4 py-2 rounded text-red-500 hover:bg-red-50">Logout</button>
                 </div>
             </div>
 
@@ -113,10 +115,18 @@ export default function Profile() {
                                                 {order.orderStatus}
                                             </div>
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                            <div className="font-medium">Total: ₹{order.totalPrice}</div>
-                                            {order.trackingId && <div className="text-sm">Tracking: {order.trackingId}</div>}
-                                            {/* <Link href={`/order/${order._id}`} className="btn btn-outline text-sm">View Details</Link> */}
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                            <div className="font-black italic text-xl text-primary">₹{order.totalPrice.toLocaleString()}</div>
+                                            {order.trackingId && (
+                                                <a
+                                                    href={`https://www.delhivery.com/track/package/${order.trackingId}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-2 bg-[#EAF4FF] text-[#4DA6FF] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#4DA6FF] hover:text-white transition-all border border-[#4DA6FF]/20"
+                                                >
+                                                    Track Order <Package className="w-3 h-3" />
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

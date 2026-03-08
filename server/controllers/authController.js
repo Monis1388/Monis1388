@@ -1,5 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -73,8 +76,6 @@ const sendOTP = async (req, res) => {
     try {
         let user = await User.findOne({ phone });
 
-        // For simplicity, if user doesn't exist, we could create one or just notify
-        // Here we'll allow registration via OTP as well
         if (!user) {
             user = await User.create({
                 name: `User-${phone.slice(-4)}`,
@@ -89,14 +90,12 @@ const sendOTP = async (req, res) => {
         user.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
         await user.save();
 
-        // MOCK: Send OTP (In production, use Twilio, Msg91, etc.)
         console.log(`[AUTH] OTP for ${phone}: ${otp}`);
 
-        // In development mode, we return the OTP in the response so the user can see it
-        const responseData = { message: 'OTP sent successfully' };
-        if (process.env.NODE_ENV === 'development') {
-            responseData.devOtp = otp; // ONLY for development testing!
-        }
+        const responseData = {
+            message: 'OTP sent successfully',
+            devOtp: otp
+        };
 
         res.json(responseData);
     } catch (error) {
@@ -136,4 +135,49 @@ const verifyOTP = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, sendOTP, verifyOTP };
+// @desc    Auth user with Google
+// @route   POST /api/users/google-login
+// @access  Public
+const googleLogin = async (req, res) => {
+    const { tokenId } = req.body;
+
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: tokenId,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const { name, email, picture } = ticket.getPayload();
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            user = await User.create({
+                name,
+                email,
+                avatar: picture,
+                password: Math.random().toString(36).slice(-10),
+            });
+        } else {
+            // Update profile picture and name if user exists
+            user.avatar = picture || user.avatar;
+            user.name = name || user.name;
+            await user.save();
+        }
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            avatar: user.avatar,
+            role: user.role,
+            token: generateToken(user._id),
+        });
+    } catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(401).json({ message: 'Google authentication failed' });
+    }
+};
+
+module.exports = { registerUser, loginUser, sendOTP, verifyOTP, googleLogin };

@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phone: { type: String },
+    avatar: { type: String },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     address: {
         street: String,
@@ -28,10 +29,12 @@ const userSchema = new mongoose.Schema({
                 od: { sph: String, cyl: String, axis: String, add: String },
                 os: { sph: String, cyl: String, axis: String, add: String },
                 pd: String,
-                lensType: String
+                lensType: String,
+                prescriptionImage: String
             }
         }
     ], // Persistent cart
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

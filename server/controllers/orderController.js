@@ -1,4 +1,4 @@
-const { createShipment, checkServiceability } = require('../services/delhiveryService');
+const { createShipment, checkServiceability, trackShipment } = require('../services/delhiveryService');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const Product = require('../models/Product');
@@ -149,11 +149,18 @@ const updateOrderToShipped = async (req, res) => {
         const order = await Order.findById(req.params.id);
 
         if (order) {
-            // Mock shipment creation
-            const shipment = await createShipment(order);
-            order.orderStatus = 'Shipped';
-            // Delhivery returns waybill or packages array usually, adjust based on actual API response structure
-            order.trackingId = shipment.awb_code || shipment.waybill || `DLV-${Date.now()}`;
+            const shipmentData = await createShipment(order);
+
+            // Delhivery returns waybill inside the 'packages' array
+            if (shipmentData && shipmentData.packages && shipmentData.packages.length > 0) {
+                order.trackingId = shipmentData.packages[0].waybill;
+                order.orderStatus = 'Shipped';
+            } else if (shipmentData.shipment_id) { // Handle mock response
+                order.trackingId = shipmentData.awb_code;
+                order.orderStatus = 'Shipped';
+            } else {
+                return res.status(400).json({ message: 'Delhivery shipment creation failed', detail: shipmentData });
+            }
 
             const updatedOrder = await order.save();
             res.json(updatedOrder);
@@ -198,6 +205,43 @@ const getServiceability = async (req, res) => {
     }
 }
 
+const razorpay = require('../config/razorpay');
+
+// @desc    Create Razorpay Order
+// @route   POST /api/orders/razorpay
+// @access  Private
+const createRazorpayOrder = async (req, res) => {
+    try {
+        const { amount } = req.body;
+
+        if (!amount || isNaN(amount)) {
+            return res.status(400).json({ message: "Invalid amount provided" });
+        }
+
+        const options = {
+            amount: Math.round(Number(amount) * 100), // amount in paise, must be an integer
+            currency: "INR",
+            receipt: `receipt_${Date.now()}`,
+        };
+
+        console.log('Creating Razorpay order with options:', options);
+        const order = await razorpay.orders.create(options);
+
+        if (!order) {
+            console.error('Razorpay order creation returned empty');
+            return res.status(500).json({ message: "Failed to create Razorpay order" });
+        }
+
+        res.json(order);
+    } catch (error) {
+        console.error('createRazorpayOrder Error:', error);
+        res.status(500).json({
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+};
+
 module.exports = {
     addOrderItems,
     getOrderById,
@@ -207,5 +251,37 @@ module.exports = {
     getOrders,
     updateOrderToShipped,
     getDashboardStats,
-    getServiceability
+    getServiceability,
+    createRazorpayOrder,
+    trackOrder: async (req, res) => {
+        try {
+            const order = await Order.findById(req.params.id);
+            if (!order) {
+                return res.status(404).json({ message: 'Order not found' });
+            }
+
+            if (!order.trackingId) {
+                return res.status(400).json({ message: 'Tracking ID not found for this order' });
+            }
+
+            const trackingData = await trackShipment(order.trackingId);
+            res.json(trackingData);
+        } catch (error) {
+            console.error('trackOrder Error:', error);
+            res.status(500).json({ message: error.message });
+        }
+    },
+    deleteOrder: async (req, res) => {
+        try {
+            const order = await Order.findById(req.params.id);
+            if (!order) {
+                return res.status(404).json({ message: 'Order not found' });
+            }
+            await Order.deleteOne({ _id: req.params.id });
+            res.json({ message: 'Order deleted successfully' });
+        } catch (error) {
+            console.error('deleteOrder Error:', error);
+            res.status(500).json({ message: error.message });
+        }
+    }
 };

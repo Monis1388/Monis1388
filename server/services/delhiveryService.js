@@ -10,20 +10,54 @@ const DELHI_URL = process.env.NODE_ENV === 'production'
  */
 const checkServiceability = async (pincode) => {
     try {
-        if (!DELHI_TOKEN) {
-            console.log('Delhivery token not found, returning mock serviceability');
-            return { status: true, message: 'Mock Serviceable' };
+        let multiSourceData = {
+            deliveryAvailable: false,
+            city: null,
+            state: null,
+            source: null
+        };
+
+        // 1. Try Delhivery API
+        if (DELHI_TOKEN) {
+            try {
+                const delhiUrl = `${DELHI_URL}/c/api/pin-codes/json/`;
+                const response = await axios.get(delhiUrl, {
+                    params: { filter: `pincode:${pincode}` },
+                    headers: { 'Authorization': `Token ${DELHI_TOKEN}` }
+                });
+
+                if (response.data && response.data.delivery_details && response.data.delivery_details.length > 0) {
+                    const details = response.data.delivery_details[0].pincode || response.data.delivery_details[0];
+                    multiSourceData.deliveryAvailable = true;
+                    multiSourceData.city = details.city;
+                    multiSourceData.state = details.state || details.state_code;
+                    multiSourceData.source = 'Delhivery';
+                    return { status: true, ...multiSourceData };
+                }
+            } catch (err) {
+                console.error('Delhivery API error:', err.message);
+            }
         }
 
-        const response = await axios.get(`${DELHI_URL}/c/api/pin-codes/json/`, {
-            params: { filter: `pincode:${pincode}` },
-            headers: { 'Authorization': `Token ${DELHI_TOKEN}` }
-        });
+        // 2. Try Postal Pincode API Fallback (https://api.postalpincode.in/pincode/{pincode})
+        try {
+            const postalResponse = await axios.get(`https://api.postalpincode.in/pincode/${pincode}`);
+            if (postalResponse.data && postalResponse.data[0].Status === 'Success') {
+                const postOffice = postalResponse.data[0].PostOffice[0];
+                multiSourceData.deliveryAvailable = true;
+                multiSourceData.city = postOffice.District;
+                multiSourceData.state = postOffice.State;
+                multiSourceData.source = 'PostalAPI';
+                return { status: true, ...multiSourceData, message: 'Standard Logistics Available' };
+            }
+        } catch (err) {
+            console.error('Postal API error:', err.message);
+        }
 
-        return response.data;
+        return { status: false, message: 'Pincode not serviceable' };
     } catch (error) {
-        console.error('Delhivery Serviceability Check failed', error.message);
-        return { status: false, message: error.message };
+        console.error('CheckServiceability Global error:', error.message);
+        return { status: false, message: 'Shipping verification unavailable' };
     }
 };
 
@@ -33,11 +67,7 @@ const checkServiceability = async (pincode) => {
 const createShipment = async (order) => {
     try {
         if (!DELHI_TOKEN) {
-            console.log('Delhivery token not found, using mock mode');
-            return {
-                shipment_id: `DELHI-${order._id}`,
-                awb_code: `DLV-${Date.now()}`
-            };
+            return { shipment_id: `MOCK-${order._id}`, awb_code: `MOCK-${Date.now()}` };
         }
 
         // Delhivery expects a specific format for shipments
@@ -46,7 +76,7 @@ const createShipment = async (order) => {
                 add: order.shippingAddress.address,
                 city: order.shippingAddress.city,
                 pin: order.shippingAddress.postalCode,
-                phone: order.user?.phone || '9999999999',
+                phone: order.user?.phone || '0000000000',
                 name: order.user?.name || 'Customer',
                 order: order._id,
                 payment_mode: order.paymentMethod === 'COD' ? 'COD' : 'Prepaid',
@@ -54,8 +84,15 @@ const createShipment = async (order) => {
             }],
             pickup_location: {
                 name: "PATEL_OPTICAL_MAIN",
-                // add your pickup address details here
+
+                // Must match Delhivery Dashboard
+                add: "Shop No. 5, Optical Street",
+                city: "Mumbai",
+                pin: "400001",
+                phone: "9876543210"
             }
+
+            // add your pickup address details here
         };
 
         const response = await axios.post(`${DELHI_URL}/api/cmu/create.json`, payload, {
@@ -67,7 +104,7 @@ const createShipment = async (order) => {
 
         return response.data;
     } catch (error) {
-        console.error('Delhivery Shipment Creation Failed', error.message);
+        console.error('Delhivery Shipment Creation error:', error.response?.data || error.message);
         return { error: true, message: error.message };
     }
 };
@@ -78,7 +115,7 @@ const createShipment = async (order) => {
 const trackShipment = async (awb) => {
     try {
         if (!DELHI_TOKEN) {
-            return { tracking_data: { status: 'In Transit (Mock)', location: 'Origin Hub' } };
+            return { packages: [{ status: { status: 'In Transit (Mock)', location: 'Origin Hub' }, waybill: awb }] };
         }
 
         const response = await axios.get(`${DELHI_URL}/api/v1/packages/json/`, {

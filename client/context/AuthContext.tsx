@@ -10,6 +10,7 @@ interface User {
     email: string;
     role: string;
     token: string;
+    avatar?: string;
     savedPrescriptions?: string[];
 }
 
@@ -21,6 +22,7 @@ interface AuthContextType {
     loading: boolean;
     sendOTP: (phone: string) => Promise<string | undefined>;
     verifyOTP: (phone: string, otp: string) => Promise<void>;
+    googleLogin: (tokenId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -89,8 +91,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     };
 
+    const googleLogin = async (tokenId: string) => {
+        try {
+            const { data } = await api.post('/users/google-login', { tokenId });
+            setUser(data);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            router.push('/');
+        } catch (error: any) {
+            throw new Error(error.response?.data?.message || 'Google login failed');
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading, sendOTP, verifyOTP }}>
+        <AuthContext.Provider value={{ user, login, register, logout, loading, sendOTP, verifyOTP, googleLogin }}>
             {children}
         </AuthContext.Provider>
     );

@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
         port: '5001',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.onrender.com',
+        pathname: '/uploads/**',
+      },
     ],
   },
 };

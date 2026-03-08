@@ -969,6 +969,70 @@ export default function AdminDashboard() {
                                         <div className="flex-1">
                                             <p className="font-black text-xs text-gray-900 leading-none">{item.name}</p>
                                             <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">QTY: {item.qty} × ₹{item.price}</p>
+
+                                            {(item.lensStats || item.lensPower) && (
+                                                <div className="mt-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 shadow-inner">
+                                                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-blue-100/30">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-5 h-5 bg-blue-500 rounded-lg flex items-center justify-center shadow-md shadow-blue-200">
+                                                                <Sparkles className="w-3 h-3 text-white" />
+                                                            </div>
+                                                            <span className="text-[10px] font-black uppercase text-blue-700 tracking-widest">Prescription Verified</span>
+                                                        </div>
+                                                        <span className="text-[9px] font-black text-blue-500/60 uppercase tracking-tighter">
+                                                            {(item.lensStats || item.lensPower).lensType || 'Standard'}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        {((item.lensStats || item.lensPower).od) && (
+                                                            <div className="bg-white/50 p-2 rounded-xl border border-white">
+                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Right (OD)</p>
+                                                                <p className="text-[10px] font-bold text-gray-800 flex flex-wrap gap-1">
+                                                                    <span>S:{(item.lensStats || item.lensPower).od.sph || '0.00'}</span>
+                                                                    <span>C:{(item.lensStats || item.lensPower).od.cyl || '0.00'}</span>
+                                                                    <span>A:{(item.lensStats || item.lensPower).od.axis || '0'}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        {((item.lensStats || item.lensPower).os) && (
+                                                            <div className="bg-white/50 p-2 rounded-xl border border-white">
+                                                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Left (OS)</p>
+                                                                <p className="text-[10px] font-bold text-gray-800 flex flex-wrap gap-1">
+                                                                    <span>S:{(item.lensStats || item.lensPower).os.sph || '0.00'}</span>
+                                                                    <span>C:{(item.lensStats || item.lensPower).os.cyl || '0.00'}</span>
+                                                                    <span>A:{(item.lensStats || item.lensPower).os.axis || '0'}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {((item.lensStats || item.lensPower).pd) && (
+                                                        <div className="mt-3 flex items-center gap-2 px-1">
+                                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pupillary Distance:</p>
+                                                            <span className="text-[10px] font-black italic text-blue-600">{(item.lensStats || item.lensPower).pd}mm</span>
+                                                        </div>
+                                                    )}
+
+                                                    {((item.lensStats || item.lensPower).prescriptionImage) && (
+                                                        <div className="mt-4 pt-4 border-t border-blue-100 flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-8 h-8 rounded-lg border border-blue-200 overflow-hidden bg-white">
+                                                                    <img src={`http://localhost:5001/${(item.lensStats || item.lensPower).prescriptionImage}`} className="w-full h-full object-cover opacity-60" />
+                                                                </div>
+                                                                <p className="text-[8px] font-bold text-gray-500 uppercase leading-tight italic">Image Evidence<br />Provided by User</p>
+                                                            </div>
+                                                            <Link
+                                                                href={`http://localhost:5001/${(item.lensStats || item.lensPower).prescriptionImage}`}
+                                                                target="_blank"
+                                                                className="h-9 px-4 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+                                                            >
+                                                                <Eye className="w-3 h-3" /> View Rx
+                                                            </Link>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

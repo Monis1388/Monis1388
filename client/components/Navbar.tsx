@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
-import { ShoppingCart, User, LogOut, Menu, X, Search, Heart, Camera, ArrowLeft, Glasses } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search, Heart, Camera, ArrowLeft, Glasses, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -26,9 +26,12 @@ const Navbar = () => {
                             <ArrowLeft className="w-6 h-6" />
                         </button>
                     ) : (
-                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400">
+                        <button
+                            onClick={() => setIsOpen(true)}
+                            className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-all active:scale-90"
+                        >
                             <User className="w-6 h-6" />
-                        </div>
+                        </button>
                     )}
 
                 </div>
@@ -69,56 +72,129 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
+            {/* Profile/Menu Overlay */}
             {isOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]" onClick={() => setIsOpen(false)}>
-                    <div className="absolute right-0 top-0 h-full w-[280px] bg-white p-6 shadow-2xl animate-in slide-in-from-right duration-300" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-10">
-                            <div className="flex flex-col items-start gap-1">
-                                <Glasses className="w-8 h-8 text-primary" />
-                                <span className="text-[10px] font-black text-gray-900 tracking-[0.2em] uppercase">Frame & Sunglasses</span>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[100] transition-all" onClick={() => setIsOpen(false)}>
+                    <div
+                        className="absolute right-0 top-0 h-full w-full max-w-[360px] bg-[#F5F6FA] flex flex-col shadow-2xl animate-in slide-in-from-right duration-500 overflow-hidden"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header: Dark Navy */}
+                        <div className="bg-[#000042] text-white p-6 pb-8">
+                            <div className="flex justify-between items-center mb-10">
+                                <div className="flex items-center gap-4">
+                                    <button onClick={() => setIsOpen(false)} className="hover:scale-110 transition-transform">
+                                        <ArrowLeft className="w-7 h-7" />
+                                    </button>
+                                    <span className="text-xl font-black tracking-tight uppercase italic">My Profile</span>
+                                </div>
+                                <div className="flex items-center gap-5">
+                                    <Search className="w-6 h-6 hover:text-primary cursor-pointer" />
+                                    <Link href="/wishlist" onClick={() => setIsOpen(false)}><Heart className="w-6 h-6 hover:text-red-500" /></Link>
+                                    <Link href="/cart" onClick={() => setIsOpen(false)}><ShoppingCart className="w-6 h-6 hover:text-primary" /></Link>
+                                    <button onClick={() => setIsOpen(false)}><Menu className="w-6 h-6" /></button>
+                                </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-full"><X className="w-6 h-6" /></button>
-                        </div>
-                        <div className="space-y-6">
-                            <Link href="/shop" className="block text-lg font-bold text-gray-800" onClick={() => setIsOpen(false)}>Shop All</Link>
-                            <Link href="/shop?category=Eyeglasses" className="block text-lg font-bold text-gray-800" onClick={() => setIsOpen(false)}>Eyeglasses</Link>
-                            <Link href="/shop?category=Sunglasses" className="block text-lg font-bold text-gray-800" onClick={() => setIsOpen(false)}>Sunglasses</Link>
-                            <div className="pt-6 border-t">
-                                {user ? (
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-primary font-bold">
-                                                {user.name[0]}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold flex items-center gap-2">
-                                                    {user.name}
-                                                    {user.role === 'admin' && (
-                                                        <span className="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Admin</span>
-                                                    )}
-                                                </p>
-                                                <p className="text-xs text-gray-500">{user.email}</p>
-                                            </div>
+
+                            {/* User Intro Card */}
+                            <div className="bg-white rounded-[24px] p-6 flex flex-col items-center border border-gray-100 shadow-xl shadow-black/10">
+                                <div className="relative mb-4">
+                                    <div className="w-20 h-20 bg-gray-50 border-2 border-[#000042] rounded-full flex items-center justify-center p-1">
+                                        <div className="w-full h-full bg-[#000042]/10 rounded-full flex items-center justify-center overflow-hidden">
+                                            {user ? (
+                                                <span className="text-3xl font-black text-[#000042] uppercase italic">{user.name[0]}</span>
+                                            ) : (
+                                                <User className="w-10 h-10 text-[#000042]" />
+                                            )}
                                         </div>
-                                        {user.role === 'admin' && (
-                                            <Link
-                                                href="/admin/dashboard"
-                                                className="block w-full text-center py-3 bg-purple-50 text-purple-700 rounded-xl font-black uppercase tracking-tighter text-sm mb-4 border border-purple-100"
-                                                onClick={() => setIsOpen(false)}
-                                            >
-                                                Open Admin Panel
-                                            </Link>
-                                        )}
-                                        <button onClick={() => { logout(); setIsOpen(false); }} className="w-full btn btn-outline border-red-100 text-red-500 hover:bg-red-50">Log Out</button>
                                     </div>
-                                ) : (
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Link href="/login" className="btn btn-outline" onClick={() => setIsOpen(false)}>Login</Link>
-                                        <Link href="/register" className="btn btn-primary" onClick={() => setIsOpen(false)}>Sign Up</Link>
-                                    </div>
+                                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 border-4 border-white rounded-full shadow-sm"></div>
+                                </div>
+
+                                <div className="text-center">
+                                    <h2 className="text-[#000042] text-2xl font-black italic tracking-tighter uppercase leading-none mb-1">
+                                        Hi {user ? user.name.split(' ')[0] : 'Specsy'}!
+                                    </h2>
+                                    <p className="text-gray-400 text-[11px] font-bold uppercase tracking-widest max-w-[200px] mx-auto leading-tight">
+                                        {user ? 'View your orders and exclusive member perks.' : 'Login or Signup to track your orders and get access to exclusive deals.'}
+                                    </p>
+                                </div>
+
+                                {!user && (
+                                    <Link
+                                        href="/login"
+                                        onClick={() => setIsOpen(false)}
+                                        className="mt-6 w-full bg-[#000042] text-white py-4 rounded-xl font-black uppercase tracking-widest text-[13px] text-center hover:bg-black transition-all shadow-lg active:scale-95"
+                                    >
+                                        Login/Signup
+                                    </Link>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Body: Action Grid */}
+                        <div className="flex-1 p-6 space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Link
+                                    href="/orders"
+                                    onClick={() => setIsOpen(false)}
+                                    className="bg-white p-6 rounded-[24px] flex flex-col items-center justify-center gap-3 border border-white shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group"
+                                >
+                                    <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                        <ShoppingCart className="w-6 h-6 text-[#000042] group-hover:text-primary transition-colors" />
+                                    </div>
+                                    <span className="text-[#000042] font-black uppercase tracking-widest text-xs italic">Orders</span>
+                                </Link>
+
+                                <Link
+                                    href="/wishlist"
+                                    onClick={() => setIsOpen(false)}
+                                    className="bg-white p-6 rounded-[24px] flex flex-col items-center justify-center gap-3 border border-white shadow-sm hover:shadow-xl hover:border-red-500/20 transition-all group"
+                                >
+                                    <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-red-50 transition-colors">
+                                        <Heart className="w-6 h-6 text-[#000042] group-hover:text-red-500 transition-colors" />
+                                    </div>
+                                    <span className="text-[#000042] font-black uppercase tracking-widest text-xs italic">Wishlist</span>
+                                </Link>
+                            </div>
+
+                            <div className="bg-white rounded-3xl p-6 border border-white shadow-sm space-y-4">
+                                <Link href="/shop" onClick={() => setIsOpen(false)} className="flex items-center justify-between text-[#000042] font-bold uppercase tracking-widest text-[11px] group">
+                                    <span>Shop Collections</span>
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </Link>
+                                <div className="h-[1px] bg-gray-50 w-full"></div>
+                                <Link href="/contact" onClick={() => setIsOpen(false)} className="flex items-center justify-between text-[#000042] font-bold uppercase tracking-widest text-[11px] group">
+                                    <span>Support Center</span>
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </Link>
+                                {user?.role === 'admin' && (
+                                    <>
+                                        <div className="h-[1px] bg-gray-50 w-full"></div>
+                                        <Link href="/admin/dashboard" onClick={() => setIsOpen(false)} className="flex items-center justify-between text-purple-600 font-black uppercase tracking-widest text-[11px] group">
+                                            <span>Admin Console</span>
+                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        </Link>
+                                    </>
+                                )}
+                                {user && (
+                                    <>
+                                        <div className="h-[1px] bg-gray-50 w-full"></div>
+                                        <button
+                                            onClick={() => { logout(); setIsOpen(false); }}
+                                            className="flex items-center justify-between w-full text-red-500 font-black uppercase tracking-widest text-[11px] group"
+                                        >
+                                            <span>Secure Logout</span>
+                                            <LogOut className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer: Legal */}
+                        <div className="p-8 text-center bg-white/50 border-t border-white">
+                            <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] italic">Frame & Sunglasses © 2026</p>
                         </div>
                     </div>
                 </div>
@@ -126,4 +202,5 @@ const Navbar = () => {
         </header>
     );
 };
+
 export default Navbar;

@@ -27,6 +27,7 @@ function LensDetailsContent() {
         od: { sph: '', cyl: '', axis: '', add: '' },
         os: { sph: '', cyl: '', axis: '', add: '' },
         pd: '',
+        prescriptionImage: '',
     });
 
     const [error, setError] = useState<string | null>(null);
@@ -94,14 +95,15 @@ function LensDetailsContent() {
     ];
 
     const lensPackages = [
-        { id: 'anti-glare', name: 'Anti-Glare', desc: 'Eliminates reflections, night driving', price: 499, icon: <Sparkles className="w-8 h-8 text-amber-500" /> },
-        { id: 'blue-cut', name: 'Blue-Cut', desc: 'Protects from screen light', price: 999, icon: <Zap className="w-8 h-8 text-blue-500" /> },
-        { id: 'photochromic', name: 'Photochromic', desc: 'Transitions in sunlight', price: 1499, icon: <ShieldCheck className="w-8 h-8 text-purple-500" /> }
+        { id: 'anti-glare', name: 'Anti-Glare', desc: 'Eliminates reflections, night driving', price: 500, icon: <Sparkles className="w-8 h-8 text-amber-500" /> },
+        { id: 'blue-cut', name: 'Blue-Cut', desc: 'Protects from screen light', price: 700, icon: <Zap className="w-8 h-8 text-blue-500" /> },
+        { id: 'photochromic', name: 'Photochromic', desc: 'Transitions in sunlight', price: 1000, icon: <ShieldCheck className="w-8 h-8 text-purple-500" /> }
     ];
 
     const validatePower = () => {
         if (selectedType === 'frame-only' || selectedType === 'zero-power') return true;
-        const { od, os } = powerData;
+        const { od, os, prescriptionImage } = powerData;
+        if (prescriptionImage) return true;
         return (od.sph || od.cyl) && (os.sph || os.cyl);
     };
 
@@ -111,6 +113,15 @@ function LensDetailsContent() {
             [eye]: { ...prev[eye], [field]: value }
         }));
         setError(null);
+    };
+
+    const handleSavePower = () => {
+        if (validatePower()) {
+            alert("Prescription details locked and saved for this session.");
+            setError(null);
+        } else {
+            setError("Please enter power values or upload a prescription image.");
+        }
     };
 
     const addToCartHandler = async () => {
@@ -164,9 +175,10 @@ function LensDetailsContent() {
         formData.append('prescription', file);
 
         try {
-            await api.post('users/upload-prescription', formData, {
+            const { data } = await api.post('users/upload-prescription', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+            setPowerData(prev => ({ ...prev, prescriptionImage: data.filePath }));
             alert("Prescription uploaded successfully!");
         } catch (err) {
             alert("Upload failed. Please try again.");
@@ -369,12 +381,25 @@ function LensDetailsContent() {
                             <div className="grid grid-cols-2 gap-4">
                                 <label className="flex items-center justify-center gap-2 h-16 border-2 border-dashed border-gray-200 rounded-3xl font-black uppercase text-xs text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all cursor-pointer">
                                     <input type="file" className="hidden" onChange={handlePrescriptionUpload} disabled={uploading} />
-                                    {uploading ? "Uploading..." : <><Upload className="w-4 h-4" /> Upload Rx</>}
+                                    {uploading ? "Uploading..." : <><Upload className="w-4 h-4" /> {powerData.prescriptionImage ? "Change Rx" : "Upload Rx"}</>}
                                 </label>
-                                <button className="flex items-center justify-center gap-2 h-16 bg-white border-2 border-gray-100 rounded-3xl font-black uppercase text-xs text-gray-900 hover:border-blue-400 transition-all">
+                                <button onClick={handleSavePower} className="flex items-center justify-center gap-2 h-16 bg-white border-2 border-gray-100 rounded-3xl font-black uppercase text-xs text-gray-900 hover:border-blue-400 transition-all">
                                     <Save className="w-4 h-4" /> Save Power
                                 </button>
                             </div>
+
+                            {powerData.prescriptionImage && (
+                                <div className="mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-emerald-200">
+                                        <img src={`http://localhost:5001/${powerData.prescriptionImage}`} className="w-full h-full object-cover" alt="Prescription" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-black uppercase text-emerald-700 tracking-widest">Prescription Image Attached</p>
+                                        <p className="text-[9px] font-bold text-emerald-600/60 uppercase">Manual input below is now optional</p>
+                                    </div>
+                                    <Check className="w-5 h-5 text-emerald-500" />
+                                </div>
+                            )}
 
                             {error && (
                                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-xs font-bold">
@@ -390,22 +415,29 @@ function LensDetailsContent() {
             <div className="fixed bottom-0 left-0 right-0 p-6 z-[9999] pointer-events-none sm:px-12">
                 <div className="max-w-xl mx-auto pointer-events-auto">
                     <AnimatePresence>
-                        {(selectedType || currentStep === 3) && (
+                        {selectedType && (
                             <motion.button
                                 initial={{ opacity: 0, y: 50 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 50 }}
-                                disabled={isSaving || !product || (currentStep === 1 && !selectedType) || (currentStep === 2 && !selectedLens)}
+                                disabled={isSaving || !product || (selectedType !== 'frame-only' && currentStep === 2 && !selectedLens)}
                                 onClick={() => {
-                                    if (currentStep < 3) setCurrentStep(prev => prev + 1);
-                                    else addToCartHandler();
+                                    if (selectedType === 'frame-only') {
+                                        addToCartHandler();
+                                    } else if (currentStep < 3) {
+                                        setCurrentStep(prev => prev + 1);
+                                    } else {
+                                        addToCartHandler();
+                                    }
                                 }}
-                                className={`w-full h-18 py-5 rounded-[2.2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${(currentStep === 3)
+                                className={`w-full h-18 py-5 rounded-[2.2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${(currentStep === 3 || selectedType === 'frame-only')
                                     ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20 hover:bg-emerald-600'
                                     : 'bg-gray-900 text-white shadow-2xl shadow-gray-900/20 hover:bg-primary'
                                     } disabled:opacity-50 disabled:grayscale`}
                             >
-                                {isSaving ? "Saving..." : currentStep === 1 ? (
+                                {isSaving ? "Saving..." : selectedType === 'frame-only' ? (
+                                    <>Add Frame to Bag <ShoppingBag className="w-5 h-5 ml-1" /></>
+                                ) : currentStep === 1 ? (
                                     <>Next: Lenses <ChevronRight className="w-5 h-5" /></>
                                 ) : currentStep === 2 ? (
                                     <>Next: Prescription <ChevronRight className="w-5 h-5" /></>

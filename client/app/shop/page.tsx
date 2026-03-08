@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import api from '../../utils/api';
 import ProductCard from '../../components/ProductCard';
 import { useSearchParams } from 'next/navigation';
@@ -99,10 +99,10 @@ const FRAME_SHAPES = [
 
 const FRAME_TYPES = ['Full Rim', 'Half Rim', 'Rimless'];
 
-export default function Shop() {
+function ShopContent() {
     const searchParams = useSearchParams();
 
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [filters, setFilters] = useState({
@@ -181,8 +181,8 @@ export default function Shop() {
                             key={shape.value}
                             onClick={() => handleShapeSelect(shape.value)}
                             className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all active:scale-95 ${filters.frameShape === shape.value
-                                    ? 'border-primary bg-primary/5 text-primary'
-                                    : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                ? 'border-primary bg-primary/5 text-primary'
+                                : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-300 hover:text-gray-700'
                                 }`}
                         >
                             <span className={filters.frameShape === shape.value ? 'text-primary' : 'text-gray-500'}>
@@ -209,8 +209,8 @@ export default function Shop() {
                             key={type || 'all'}
                             onClick={() => setFilters({ ...filters, frameType: type })}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${filters.frameType === type
-                                    ? 'bg-gray-900 text-white border-gray-900'
-                                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
                                 }`}
                         >
                             {type || 'All'}
@@ -238,7 +238,7 @@ export default function Shop() {
                     <option value="Kids">Kids</option>
                     <option value="Men">Men</option>
                     <option value="Women">Women</option>
-                    <option value="Contact Lenses">Contact Lenses</option>
+
                 </select>
             </div>
 
@@ -367,5 +367,27 @@ export default function Shop() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function Shop() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col md:flex-row gap-8 animate-pulse">
+                <aside className="hidden md:block w-72 flex-shrink-0">
+                    <div className="h-[600px] bg-gray-100 rounded-3xl" />
+                </aside>
+                <div className="flex-1">
+                    <div className="h-10 bg-gray-100 rounded-xl mb-6 w-48" />
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="aspect-[3/4] bg-gray-100 rounded-3xl" />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        }>
+            <ShopContent />
+        </Suspense>
     );
 }

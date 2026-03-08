@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Product = require('../models/Product');
 
 // @desc    Get user profile
 // @route   GET /api/users/profile
@@ -90,24 +91,59 @@ const uploadPrescription = async (req, res) => {
 // @route GET /api/users/cart
 // @access Private
 const getUserCart = async (req, res) => {
-    const user = await User.findById(req.user._id).populate('cart.product');
-    res.json(user.cart);
+    try {
+        const user = await User.findById(req.user._id).populate('cart.product');
+
+        // AUTO-HEALING: Ensure cart prices match current product prices (skipping lens orders which carry extra charges)
+        let modified = false;
+        user.cart.forEach(item => {
+            const isFrameOnly = !item.lensPower || !item.lensPower.lensType || item.lensPower.lensType === 'Default' || item.lensPower.lensType === 'Frame Only';
+            if (isFrameOnly && item.product && item.price !== item.product.price) {
+                item.price = item.product.price;
+                modified = true;
+            }
+        });
+
+        if (modified) await user.save();
+
+        res.json(user.cart);
+    } catch (error) {
+        res.status(500).json({ message: 'Cart retrieval failed' });
+    }
 }
 
 // @desc Add to cart
 // @route POST /api/users/cart
 // @access Private
 const addToCart = async (req, res) => {
-    const { productId, name, image, price, qty, lensPower } = req.body;
+    const { productId, name, image, qty, lensPower } = req.body;
     const user = await User.findById(req.user._id);
+    const productItem = await Product.findById(productId);
 
+    if (!productItem) {
+        return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // CALCULATE FINAL PRICE: Base Frame + Lens Add-on
+    let basePrice = productItem.price;
+    let lensCharge = 0;
+
+    if (lensPower && lensPower.lensType) {
+        const type = lensPower.lensType;
+        if (type === 'Anti-Glare') lensCharge = 500;
+        else if (type === 'Blue-Cut') lensCharge = 700;
+        else if (type === 'Photochromic') lensCharge = 1000;
+    }
+
+    const price = basePrice + lensCharge;
     const itemExists = user.cart.find(x => x.product.toString() === productId);
 
     if (itemExists) {
-        itemExists.qty = qty; // Update qty
+        itemExists.qty = qty;
+        itemExists.price = price;
         if (lensPower) itemExists.lensPower = lensPower;
     } else {
-        user.cart.push({ product: productId, name, image, price, qty, lensPower });
+        user.cart.push({ product: productId, name: name || productItem.name, image: image || productItem.image, price, qty, lensPower });
     }
     await user.save();
     res.json(user.cart);
@@ -173,4 +209,62 @@ const updateUser = async (req, res) => {
     }
 }
 
-module.exports = { getUserProfile, updateUserProfile, uploadPrescription, getUserCart, addToCart, removeFromCart, getUsers, deleteUser, updateUser };
+// @desc    Get wishlist
+// @route   GET /api/users/wishlist
+// @access  Private
+const getWishlist = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).populate('wishlist');
+        res.json(user.wishlist);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+// @desc    Add to wishlist
+// @route   POST /api/users/wishlist
+// @access  Private
+const addToWishlist = async (req, res) => {
+    try {
+        const { productId } = req.body;
+        const user = await User.findById(req.user._id);
+
+        if (!user.wishlist.includes(productId)) {
+            user.wishlist.push(productId);
+            await user.save();
+        }
+
+        res.json({ message: 'Added to wishlist', wishlist: user.wishlist });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+// @desc    Remove from wishlist
+// @route   DELETE /api/users/wishlist/:id
+// @access  Private
+const removeFromWishlist = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        user.wishlist = user.wishlist.filter(id => id.toString() !== req.params.id);
+        await user.save();
+        res.json({ message: 'Removed from wishlist', wishlist: user.wishlist });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+module.exports = {
+    getUserProfile,
+    updateUserProfile,
+    uploadPrescription,
+    getUserCart,
+    addToCart,
+    removeFromCart,
+    getUsers,
+    deleteUser,
+    updateUser,
+    getWishlist,
+    addToWishlist,
+    removeFromWishlist
+};

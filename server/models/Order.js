@@ -18,7 +18,7 @@ const orderSchema = mongoose.Schema(
                     required: true,
                     ref: 'Product',
                 },
-                lensStats: { type: Object }, // Optional prescription details
+                lensStats: { type: mongoose.Schema.Types.Mixed }, // Optional prescription details
             },
         ],
         shippingAddress: {
@@ -73,9 +73,9 @@ const orderSchema = mongoose.Schema(
         deliveredAt: {
             type: Date,
         },
-        orderStatus: { // Processing, Shipped, Out for Delivery, Delivered, Cancelled
+        orderStatus: { // Confirmed, Shipped, Out for Delivery, Delivered, Cancelled
             type: String,
-            default: 'Processing'
+            default: 'Confirmed'
         },
         trackingId: { type: String } // Shiprocket AWB
     },

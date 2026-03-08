@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingBag, Trash2, ArrowLeft, Plus,
-    Minus, ChevronRight, Sparkles, ShieldCheck
+    Minus, ChevronRight, Sparkles, ShieldCheck, Truck
 } from 'lucide-react';
-import api from '../../utils/api';
+import api, { BACKEND_URL } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Cart() {
@@ -127,7 +127,7 @@ export default function Cart() {
                                                 {/* Thumbnail */}
                                                 <div className="w-full md:w-48 aspect-[4/3] rounded-[24px] bg-gray-50 p-2 border border-gray-100 flex items-center justify-center overflow-hidden">
                                                     <img
-                                                        src={item.image?.startsWith('/uploads/') ? `http://localhost:5001${item.image}` : (item.image || item.product.image || '/placeholder.png')}
+                                                        src={item.image?.startsWith('/uploads/') ? `${BACKEND_URL}${item.image}` : (item.image || item.product.image || '/placeholder.png')}
                                                         className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                                                         alt={item.name}
                                                     />
@@ -200,54 +200,75 @@ export default function Cart() {
                             </AnimatePresence>
                         </div>
 
-                        {/* Order Summary (The Vault Aesthetic) */}
+                        {/* Order Summary (The Premium Light Theme) */}
                         <div className="lg:col-span-4">
                             <motion.div
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="bg-black text-white rounded-[40px] p-8 md:p-10 shadow-3xl shadow-black/20 sticky top-24"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-white/80 backdrop-blur-xl border border-white rounded-[32px] p-8 md:p-10 shadow-[0_20px_50px_rgba(0,102,255,0.05)] sticky top-24 relative overflow-hidden"
                             >
-                                <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-8 flex items-center justify-between">
+                                {/* Decorative Gradient Blobs */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-100/50 rounded-full -ml-16 -mb-16 blur-3xl opacity-50" />
+
+                                <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-8 flex items-center justify-between text-[#000042]">
                                     Summary
-                                    <Sparkles className="w-5 h-5 text-emerald-400" />
+                                    <Sparkles className="w-5 h-5 text-blue-400 animate-pulse" />
                                 </h2>
 
-                                <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
-                                    <div className="flex justify-between text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
-                                        <span>Total Units</span>
-                                        <span className="text-white">{itemCount} items</span>
+                                <div className="space-y-6 border-b border-gray-100 pb-8 mb-8">
+                                    <div className="flex justify-between text-[11px] font-black uppercase text-gray-400 tracking-[0.2em] items-center">
+                                        <div className="flex items-center gap-2">
+                                            <ShoppingBag className="w-3.5 h-3.5 text-blue-400" />
+                                            <span>Total Units</span>
+                                        </div>
+                                        <span className="text-[#000042] font-black">{itemCount} items</span>
                                     </div>
-                                    <div className="flex justify-between text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
-                                        <span>Logistics</span>
-                                        <span className="text-emerald-500">Calculated at Checkout</span>
-                                    </div>
-                                    <div className="flex justify-between text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">
-                                        <span>Service Tax</span>
-                                        <span className="text-white">Inclusive</span>
+
+                                </div>
+
+                                <div className="flex flex-col gap-1 mb-10 relative">
+                                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest ml-1">Est. Subtotal</span>
+                                    <div className="relative inline-block w-fit">
+                                        <motion.span
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="text-5xl font-black italic uppercase tracking-tighter text-[#000042] block relative z-10"
+                                        >
+                                            ₹{subtotal.toLocaleString()}
+                                        </motion.span>
+                                        <div className="absolute bottom-1 left-2 w-full h-4 bg-blue-100/60 -skew-x-12 -z-0 rounded-sm" />
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-1 mb-10">
-                                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Est. Subtotal</span>
-                                    <span className="text-5xl font-black italic uppercase tracking-tighter">₹{subtotal.toLocaleString()}</span>
-                                </div>
-
-                                <div className="space-y-4">
+                                <div className="space-y-5">
                                     <Link href="/checkout" className="group block">
-                                        <button className="w-full h-20 bg-white text-black rounded-[24px] font-black uppercase tracking-[0.3em] text-[10px] hover:bg-emerald-400 hover:text-white transition-all shadow-2xl shadow-white/5 active:scale-[0.98] flex items-center justify-center gap-3">
-                                            Checkout Now <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        <button className="w-full h-20 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-[24px] font-black uppercase tracking-[0.3em] text-[11px] hover:shadow-[0_15px_30px_rgba(0,102,255,0.3)] hover:-translate-y-1 transition-all active:scale-[0.98] flex items-center justify-center gap-3 relative overflow-hidden">
+                                            {/* Shine Effect */}
+                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+                                            Checkout Now
+                                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                         </button>
                                     </Link>
 
-                                    <div className="flex items-center justify-center gap-3 py-4">
-                                        <ShieldCheck className="w-4 h-4 text-gray-500" />
-                                        <span className="text-[9px] font-black uppercase text-gray-500 tracking-widest">Encrypted Checkout Guaranteed</span>
+                                    <div className="flex items-center justify-center gap-3 py-2">
+                                        <div className="flex -space-x-2">
+                                            <div className="w-6 h-6 rounded-full bg-blue-50 border-2 border-white flex items-center justify-center"><ShieldCheck className="w-3 h-3 text-blue-500" /></div>
+                                            <div className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[8px] font-black text-blue-700">SSL</div>
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Secure Handshake Guaranteed</span>
                                     </div>
                                 </div>
 
-                                <div className="mt-8 p-4 bg-white/5 rounded-2xl border border-white/10">
-                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Member Benefit</p>
-                                    <p className="text-xs font-bold leading-relaxed">Free premium hard-shell case & cleaning kit included with this order.</p>
+                                <div className="mt-8 p-6 bg-blue-50/50 rounded-3xl border border-blue-100/50 relative group cursor-default">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-200">
+                                            <Sparkles className="w-4 h-4 text-white" />
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#000042]">Member Benefit</p>
+                                    </div>
+                                    <p className="text-xs font-bold leading-relaxed text-gray-500 italic">Free premium hard-shell case & microfiber cleaning suite included with this order.</p>
                                 </div>
                             </motion.div>
                         </div>

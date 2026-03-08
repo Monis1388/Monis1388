@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import api from '../utils/api';
+import api, { BACKEND_URL } from '../utils/api';
 import ProductCard from '../components/ProductCard';
 import { ArrowRight, Sparkles, Home as HomeIcon, LayoutGrid, RotateCw, ShoppingBag, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -90,7 +90,7 @@ export default function Home() {
                 className="group flex flex-col items-center gap-2"
               >
                 <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100 group-hover:shadow-md transition-all">
-                  <img src={item.image?.startsWith('/uploads/') ? `http://localhost:5001${item.image}` : item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <img src={item.image?.startsWith('/uploads/') ? `${BACKEND_URL}${item.image}` : item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   <div className="absolute top-2 left-2 text-[10px] font-black text-gray-900 bg-white/60 backdrop-blur-sm px-2 py-0.5 rounded-md uppercase tracking-tighter">
                     {item.name}
                   </div>
@@ -134,7 +134,6 @@ export default function Home() {
         {[
           { icon: HomeIcon, label: "Home", active: true },
           { icon: LayoutGrid, label: "Category" },
-          { icon: RotateCw, label: "TryAtHome" },
           { icon: ShoppingBag, label: "Orders" },
           { icon: UserIcon, label: "Profile" }
         ].map((item, idx) => (

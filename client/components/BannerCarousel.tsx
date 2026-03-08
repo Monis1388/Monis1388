@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { BACKEND_URL } from '../utils/api';
 
 interface Banner {
     _id: string;
@@ -48,7 +49,7 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
                             banners[current].image
                                 ? banners[current].image.startsWith('http')
                                     ? banners[current].image
-                                    : `http://localhost:5001${banners[current].image.startsWith('/') ? '' : '/'}${banners[current].image}`
+                                    : `${BACKEND_URL}${banners[current].image.startsWith('/') ? '' : '/'}${banners[current].image}`
                                 : ''
                         }
                         className="w-full h-full object-cover"

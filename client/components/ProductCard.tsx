@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { Star, ShoppingCart, ImageOff } from 'lucide-react';
 import { useState } from 'react';
+import { BACKEND_URL } from '../utils/api';
 
 const ProductCard = ({ product }: { product: any }) => {
     const [imgError, setImgError] = useState(false);
@@ -11,12 +12,21 @@ const ProductCard = ({ product }: { product: any }) => {
             {/* Image Container */}
             <Link href={`/product/${product._id}`} className="block relative aspect-square bg-[#F8F9FA] overflow-hidden">
                 {!imgError ? (
-                    <img
-                        src={product.image?.startsWith('/uploads/') ? `http://localhost:5001${product.image}` : (product.image || 'https://images.unsplash.com/photo-1544717297-fa15bdfca03c?q=80&w=400')}
-                        alt={product.name}
-                        onError={() => setImgError(true)}
-                        className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-1000 ease-out"
-                    />
+                    <>
+                        <img
+                            src={product.image?.startsWith('/uploads/') ? `${BACKEND_URL}${product.image}` : (product.image || 'https://images.unsplash.com/photo-1544717297-fa15bdfca03c?q=80&w=400')}
+                            alt={product.name}
+                            onError={() => setImgError(true)}
+                            className={`object-cover w-full h-full transition-all duration-700 ease-out ${product.images && product.images.length > 0 ? 'group-hover:opacity-0 group-hover:scale-110' : 'group-hover:scale-110'}`}
+                        />
+                        {product.images && product.images.length > 0 && (
+                            <img
+                                src={product.images[0]?.startsWith('/uploads/') ? `${BACKEND_URL}${product.images[0]}` : product.images[0]}
+                                alt={`${product.name} alternate`}
+                                className="absolute inset-0 object-cover w-full h-full scale-105 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-700 ease-out"
+                            />
+                        )}
+                    </>
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-50 text-gray-300">
                         <ImageOff className="w-8 h-8 opacity-20" />
